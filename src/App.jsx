@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { get, set } from 'idb-keyval'
 import Header from './components/Header'
 import RecordButton from './components/RecordButton'
 import MemoList from './components/MemoList'
@@ -118,8 +119,13 @@ export default function App() {
         const url = URL.createObjectURL(blob)
         const title = generateTitle()
         const id = Date.now().toString()
+        const newMemo = { id, title, blob, url, note: '', tags: [], duration: recordingTime }
 
-        setMemos((prev) => [{ id, title, url, note: '', tags: [], duration: recordingTime }, ...prev])
+        setMemos((prev) => {
+          const newMemos = [newMemo, ...prev]
+          set('soundsketch-memos', newMemos).catch(console.error)
+          return newMemos
+        })
 
         // Stop all tracks
         stream.getTracks().forEach((track) => track.stop())
@@ -182,30 +188,38 @@ export default function App() {
 
   // Update note
   const updateNote = useCallback((id, note) => {
-    setMemos((prev) => prev.map((m) => (m.id === id ? { ...m, note } : m)))
+    setMemos((prev) => {
+      const newMemos = prev.map((m) => (m.id === id ? { ...m, note } : m))
+      set('soundsketch-memos', newMemos).catch(console.error)
+      return newMemos
+    })
   }, [])
 
   // Add tag
   const addTag = useCallback((id, tag) => {
-    setMemos((prev) =>
-      prev.map((m) => {
+    setMemos((prev) => {
+      const newMemos = prev.map((m) => {
         if (m.id !== id) return m
         if (m.tags.some((t) => t.label === tag)) return m // 重複防止
         const colorIndex = (m.tags.length) % 8
         return { ...m, tags: [...m.tags, { label: tag, colorIndex }] }
       })
-    )
+      set('soundsketch-memos', newMemos).catch(console.error)
+      return newMemos
+    })
   }, [])
 
   // Remove tag
   const removeTag = useCallback((id, tagLabel) => {
-    setMemos((prev) =>
-      prev.map((m) =>
+    setMemos((prev) => {
+      const newMemos = prev.map((m) =>
         m.id === id
           ? { ...m, tags: m.tags.filter((t) => t.label !== tagLabel) }
           : m
       )
-    )
+      set('soundsketch-memos', newMemos).catch(console.error)
+      return newMemos
+    })
   }, [])
 
   // Delete memo
@@ -218,15 +232,32 @@ export default function App() {
       }
       setMemos((prev) => {
         const memo = prev.find((m) => m.id === id)
-        if (memo) URL.revokeObjectURL(memo.url)
-        return prev.filter((m) => m.id !== id)
+        if (memo && memo.url) URL.revokeObjectURL(memo.url)
+        const newMemos = prev.filter((m) => m.id !== id)
+        set('soundsketch-memos', newMemos).catch(console.error)
+        return newMemos
       })
     },
     [playingId]
   )
 
-  // Cleanup on unmount
+  // Cleanup on unmount & initial load
   useEffect(() => {
+    const loadMemos = async () => {
+      try {
+        const storedMemos = await get('soundsketch-memos')
+        if (storedMemos) {
+          setMemos(storedMemos.map(m => ({
+            ...m,
+            url: m.blob ? URL.createObjectURL(m.blob) : m.url
+          })))
+        }
+      } catch (e) {
+        console.error('Failed to load memos:', e)
+      }
+    }
+    loadMemos()
+
     return () => {
       if (audioRef.current) {
         audioRef.current.pause()
