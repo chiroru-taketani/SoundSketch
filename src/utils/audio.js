@@ -1,9 +1,22 @@
 // Blob (webm, mp4) を Wav 形式の Blob に変換するユーティリティ関数
 export async function convertBlobToWav(blob) {
-  const arrayBuffer = await blob.arrayBuffer()
+  const arrayBuffer = await new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsArrayBuffer(blob)
+  })
+
   const AudioContext = window.AudioContext || window.webkitAudioContext
   const audioContext = new AudioContext()
-  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+  
+  const audioBuffer = await new Promise((resolve, reject) => {
+    audioContext.decodeAudioData(
+      arrayBuffer,
+      (buffer) => resolve(buffer),
+      (err) => reject(err || new Error('Audio decoding failed'))
+    )
+  })
 
   const numOfChan = audioBuffer.numberOfChannels
   const length = audioBuffer.length * numOfChan * 2 + 44

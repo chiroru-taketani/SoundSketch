@@ -48,15 +48,28 @@ export default function MemoItem({ memo, isPlaying, onTogglePlay, onUpdateNote, 
     if (isExporting) return
     setIsExporting(true)
     try {
-      const filename = `${memo.title || 'SoundSketch'}.wav`
+      let filename = `${memo.title || 'SoundSketch'}.wav`
       
       // Blobを取得
       const response = await fetch(memo.url || memo.audioDataUrl)
       const sourceBlob = await response.blob()
 
-      // Wavに変換
-      const wavBlob = await convertBlobToWav(sourceBlob)
-      const file = new File([wavBlob], filename, { type: 'audio/wav' })
+      // Wavに変換（MediaRecorderのwebmはブラウザによってはパースエラーになる場合があるため、失敗時は元の形式でフォールバック）
+      let exportBlob = sourceBlob
+      let exportType = 'audio/webm' // デフォルト
+      
+      try {
+        exportBlob = await convertBlobToWav(sourceBlob)
+        filename = `${memo.title || 'SoundSketch'}.wav`
+        exportType = 'audio/wav'
+      } catch (decodeErr) {
+        console.warn('WAV変換に失敗したため、元の形式で書き出します:', decodeErr)
+        const ext = memo.type?.includes('mp4') || memo.type?.includes('m4a') ? 'm4a' : 'webm'
+        filename = `${memo.title || 'SoundSketch'}.${ext}`
+        exportType = memo.type || 'audio/webm'
+      }
+
+      const file = new File([exportBlob], filename, { type: exportType })
 
       // Web Share API が対応している場合 (iOS Safari等)
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -68,7 +81,7 @@ export default function MemoItem({ memo, isPlaying, onTogglePlay, onUpdateNote, 
       } else {
         // 非対応またはPCの場合はダウンロードさせる
         const a = document.createElement('a')
-        a.href = URL.createObjectURL(wavBlob)
+        a.href = URL.createObjectURL(exportBlob)
         a.download = filename
         document.body.appendChild(a)
         a.click()
@@ -76,8 +89,7 @@ export default function MemoItem({ memo, isPlaying, onTogglePlay, onUpdateNote, 
         URL.revokeObjectURL(a.href)
       }
     } catch (error) {
-      console.error('シェア専用エラー:', error)
-      alert('ファイルの書き出しに失敗しました。')
+      alert(`ファイルの書き出しに失敗しました。\n詳細: ${error.message || error}`)
     } finally {
       setIsExporting(false)
     }
