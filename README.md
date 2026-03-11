@@ -1,16 +1,49 @@
-# React + Vite
+# SoundSketch 🎵
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+SoundSketchは、音楽クリエイターがふと浮かんだメロディ、ビート、コード進行などのアイデアを素早く録音してストックするための、ミニマルで洗練された音声メモアプリケーションです。
 
-Currently, two official plugins are available:
+## ✨ 主な機能
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **🎙️ ワンタップ録音**: 大きな録音ボタンで、アイデアを逃さずすぐに録音可能。
+- **📝 メモ機能**: 録音したデータに、テキストでメモ（キー、BPM、コード進行など）を追加できます。
+- **🏷️ カラフルなタグ機能**: 
+  - 「メロディ」「ビート」「コード」などの候補タグをワンタップで追加。
+  - 独自のカスタムタグも作成可能。自動的に割り当てられるカラーで視覚的に整理できます。
+- **🔍 タグでの絞り込み検索**: 追加したタグを選択することで、特定のタグを持つメモだけを瞬時にフィルタリングして表示します。複数タグのAND検索にも対応。
+- **↕️ 柔軟な並び替え**: 録音データのリストを「新しい順」「古い順」「長い順」「短い順」「タグ数が多い順」に並び替えることができます。
+- **📱 モダンなUIデザイン**: ダークテーマを基調とし、Tailwind CSSによるスムーズなアニメーションやグロー効果を取り入れた、直感的で心地よいデザイン。
 
-## React Compiler
+## 🛠️ 使用技術
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **フレームワーク**: React 18, Vite
+- **スタイリング**: Tailwind CSS v4
+- **アイコン**: Lucide React
+- **音声録音**: MediaRecorder API
 
-## Expanding the ESLint configuration
+## 🚀 ローカルでのセットアップと実行
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+このプロジェクトをローカル環境で動かすための手順です。
+前提条件として、[Node.js](https://nodejs.org/) がインストールされている必要があります。
+
+1. リポジトリのクローン（またはプロジェクトフォルダへの移動）
+2. 依存関係のインストール
+   ```bash
+   npm install
+   ```
+3. 開発サーバーの起動
+   ```bash
+   npm run dev
+   ```
+4. ブラウザでアクセス
+   ターミナルに表示されたローカルURL（例: `http://localhost:5173/`）をブラウザで開いてください。
+
+> ⚠️ **注意**: 
+> 録音機能（マイクへのアクセス）を使用するため、ブラウザのマイク許可設定を有効にしてください。
+> 現在のバージョン（MVP）では、録音データはブラウザのメモリ上に一時的に保持されるため、ページをリロードするとデータは失われます。
+
+## 💡 今後追加できそうな機能（拡張案）
+
+- ブラウザの LocalStorage や IndexedDB を使用した、データの永続化保存
+- 音声ファイル（.wav / .mp3）としてのエクスポート機能
+- 波形（Waveform）のプレビュー表示
+- PWA（Progressive Web App）化によるスマートフォンでのネイティブアプリライクな使用（iOSでの安定した動作対応含む）
