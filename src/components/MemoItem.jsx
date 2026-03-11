@@ -15,11 +15,13 @@ const TAG_COLORS = [
 
 const SUGGESTED_TAGS = ['メロディ', 'ビート', 'コード', 'ベース', 'ボーカル', 'アイデア', 'サンプル', 'リフ']
 
-export default function MemoItem({ memo, isPlaying, onTogglePlay, onUpdateNote, onAddTag, onRemoveTag, onDelete, index }) {
+export default function MemoItem({ memo, isPlaying, onTogglePlay, onUpdateNote, onUpdateTitle, onAddTag, onRemoveTag, onDelete, index }) {
   const [showNote, setShowNote] = useState(false)
   const [showTagInput, setShowTagInput] = useState(false)
   const [tagInput, setTagInput] = useState('')
   const [isExporting, setIsExporting] = useState(false)
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [editTitle, setEditTitle] = useState(memo.title)
 
   const handleAddTag = (tagText) => {
     const trimmed = tagText.trim()
@@ -43,6 +45,16 @@ export default function MemoItem({ memo, isPlaying, onTogglePlay, onUpdateNote, 
   const availableSuggestions = SUGGESTED_TAGS.filter(
     (s) => !memo.tags.some((t) => t.label === s)
   )
+
+  const handleTitleSave = () => {
+    const trimmed = editTitle.trim()
+    if (trimmed && trimmed !== memo.title) {
+      onUpdateTitle(trimmed)
+    } else {
+      setEditTitle(memo.title)
+    }
+    setIsEditingTitle(false)
+  }
 
   const handleShare = async () => {
     if (isExporting) return
@@ -120,7 +132,34 @@ export default function MemoItem({ memo, isPlaying, onTogglePlay, onUpdateNote, 
 
         {/* Title & Info */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-text-primary truncate">{memo.title}</p>
+          {isEditingTitle ? (
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onBlur={handleTitleSave}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleTitleSave()
+                if (e.key === 'Escape') {
+                  setEditTitle(memo.title)
+                  setIsEditingTitle(false)
+                }
+              }}
+              autoFocus
+              className="w-full text-sm font-medium text-text-primary bg-surface-50 border border-accent-purple/50 rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-accent-purple/20 transition-all"
+            />
+          ) : (
+            <p
+              className="text-sm font-medium text-text-primary truncate cursor-pointer hover:text-accent-purple transition-colors"
+              onClick={() => {
+                setEditTitle(memo.title)
+                setIsEditingTitle(true)
+              }}
+              title="クリックしてタイトルを編集"
+            >
+              {memo.title}
+            </p>
+          )}
           {memo.note && (
             <p className="text-xs text-text-muted truncate mt-0.5">{memo.note}</p>
           )}

@@ -8,6 +8,7 @@ export default function MemoList({
   playingId,
   onTogglePlay,
   onUpdateNote,
+  onUpdateTitle,
   onAddTag,
   onRemoveTag,
   onDelete,
@@ -79,6 +80,7 @@ export default function MemoList({
               isPlaying={playingId === memo.id}
               onTogglePlay={() => onTogglePlay(memo)}
               onUpdateNote={(note) => onUpdateNote(memo.id, note)}
+              onUpdateTitle={(title) => onUpdateTitle(memo.id, title)}
               onAddTag={(tag) => onAddTag(memo.id, tag)}
               onRemoveTag={(tagLabel) => onRemoveTag(memo.id, tagLabel)}
               onDelete={() => onDelete(memo.id)}

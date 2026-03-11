@@ -210,6 +210,15 @@ export default function App() {
     })
   }, [])
 
+  // Update title
+  const updateTitle = useCallback((id, title) => {
+    setMemos((prev) => {
+      const newMemos = prev.map((m) => (m.id === id ? { ...m, title } : m))
+      set('soundsketch-memos', newMemos.map(m => ({ ...m, url: '' }))).catch(console.error)
+      return newMemos
+    })
+  }, [])
+
   // Add tag
   const addTag = useCallback((id, tag) => {
     setMemos((prev) => {
@@ -343,6 +352,7 @@ export default function App() {
             playingId={playingId}
             onTogglePlay={togglePlay}
             onUpdateNote={updateNote}
+            onUpdateTitle={updateTitle}
             onAddTag={addTag}
             onRemoveTag={removeTag}
             onDelete={deleteMemo}
