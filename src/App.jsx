@@ -1,0 +1,296 @@
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import Header from './components/Header'
+import RecordButton from './components/RecordButton'
+import MemoList from './components/MemoList'
+
+export default function App() {
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingTime, setRecordingTime] = useState(0)
+  const [memos, setMemos] = useState([])
+  const [playingId, setPlayingId] = useState(null)
+  const [filterTags, setFilterTags] = useState([])
+  const [sortBy, setSortBy] = useState('newest')
+
+  // Collect all unique tags across memos (with count)
+  const allTags = useMemo(() => {
+    const tagMap = new Map()
+    memos.forEach((m) => {
+      m.tags.forEach((t) => {
+        if (tagMap.has(t.label)) {
+          tagMap.get(t.label).count += 1
+        } else {
+          tagMap.set(t.label, { label: t.label, colorIndex: t.colorIndex, count: 1 })
+        }
+      })
+    })
+    return Array.from(tagMap.values())
+  }, [memos])
+
+  // Filtered + sorted memos
+  const filteredMemos = useMemo(() => {
+    let result = memos
+
+    // Filter by tags (AND condition)
+    if (filterTags.length > 0) {
+      result = result.filter((m) =>
+        filterTags.every((ft) => m.tags.some((t) => t.label === ft))
+      )
+    }
+
+    // Sort
+    const sorted = [...result]
+    switch (sortBy) {
+      case 'oldest':
+        sorted.sort((a, b) => Number(a.id) - Number(b.id))
+        break
+      case 'newest':
+        sorted.sort((a, b) => Number(b.id) - Number(a.id))
+        break
+      case 'longest':
+        sorted.sort((a, b) => (b.duration || 0) - (a.duration || 0))
+        break
+      case 'shortest':
+        sorted.sort((a, b) => (a.duration || 0) - (b.duration || 0))
+        break
+      case 'most-tags':
+        sorted.sort((a, b) => b.tags.length - a.tags.length)
+        break
+      default:
+        break
+    }
+
+    return sorted
+  }, [memos, filterTags, sortBy])
+
+  // Toggle a filter tag
+  const toggleFilterTag = useCallback((tagLabel) => {
+    setFilterTags((prev) =>
+      prev.includes(tagLabel)
+        ? prev.filter((t) => t !== tagLabel)
+        : [...prev, tagLabel]
+    )
+  }, [])
+
+  // Clear all filter tags
+  const clearFilterTags = useCallback(() => {
+    setFilterTags([])
+  }, [])
+
+  const mediaRecorderRef = useRef(null)
+  const chunksRef = useRef([])
+  const timerRef = useRef(null)
+  const audioRef = useRef(null)
+
+  // Format seconds to mm:ss
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0')
+    const s = (seconds % 60).toString().padStart(2, '0')
+    return `${m}:${s}`
+  }
+
+  // Generate title from current date/time
+  const generateTitle = () => {
+    const now = new Date()
+    const y = now.getFullYear()
+    const mo = (now.getMonth() + 1).toString().padStart(2, '0')
+    const d = now.getDate().toString().padStart(2, '0')
+    const h = now.getHours().toString().padStart(2, '0')
+    const mi = now.getMinutes().toString().padStart(2, '0')
+    return `${y}-${mo}-${d} ${h}:${mi}`
+  }
+
+  // Start recording
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder
+      chunksRef.current = []
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data)
+        }
+      }
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+        const url = URL.createObjectURL(blob)
+        const title = generateTitle()
+        const id = Date.now().toString()
+
+        setMemos((prev) => [{ id, title, url, note: '', tags: [], duration: recordingTime }, ...prev])
+
+        // Stop all tracks
+        stream.getTracks().forEach((track) => track.stop())
+      }
+
+      mediaRecorder.start()
+      setIsRecording(true)
+      setRecordingTime(0)
+
+      // Start timer
+      timerRef.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1)
+      }, 1000)
+    } catch (err) {
+      alert('マイクへのアクセスが拒否されました。ブラウザの設定を確認してください。')
+      console.error('マイクアクセスエラー:', err)
+    }
+  }, [recordingTime])
+
+  // Stop recording
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop()
+    }
+    setIsRecording(false)
+    clearInterval(timerRef.current)
+  }, [])
+
+  // Play / Pause
+  const togglePlay = useCallback(
+    (memo) => {
+      // If same memo is playing, pause it
+      if (playingId === memo.id) {
+        if (audioRef.current) {
+          audioRef.current.pause()
+          audioRef.current = null
+        }
+        setPlayingId(null)
+        return
+      }
+
+      // Stop current audio if any
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
+
+      const audio = new Audio(memo.url)
+      audio.play()
+      audioRef.current = audio
+      setPlayingId(memo.id)
+
+      audio.onended = () => {
+        setPlayingId(null)
+        audioRef.current = null
+      }
+    },
+    [playingId]
+  )
+
+  // Update note
+  const updateNote = useCallback((id, note) => {
+    setMemos((prev) => prev.map((m) => (m.id === id ? { ...m, note } : m)))
+  }, [])
+
+  // Add tag
+  const addTag = useCallback((id, tag) => {
+    setMemos((prev) =>
+      prev.map((m) => {
+        if (m.id !== id) return m
+        if (m.tags.some((t) => t.label === tag)) return m // 重複防止
+        const colorIndex = (m.tags.length) % 8
+        return { ...m, tags: [...m.tags, { label: tag, colorIndex }] }
+      })
+    )
+  }, [])
+
+  // Remove tag
+  const removeTag = useCallback((id, tagLabel) => {
+    setMemos((prev) =>
+      prev.map((m) =>
+        m.id === id
+          ? { ...m, tags: m.tags.filter((t) => t.label !== tagLabel) }
+          : m
+      )
+    )
+  }, [])
+
+  // Delete memo
+  const deleteMemo = useCallback(
+    (id) => {
+      if (playingId === id && audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+        setPlayingId(null)
+      }
+      setMemos((prev) => {
+        const memo = prev.find((m) => m.id === id)
+        if (memo) URL.revokeObjectURL(memo.url)
+        return prev.filter((m) => m.id !== id)
+      })
+    },
+    [playingId]
+  )
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+      }
+      clearInterval(timerRef.current)
+    }
+  }, [])
+
+  return (
+    <div className="min-h-screen bg-surface-50 text-text-primary font-sans flex flex-col">
+      <Header memoCount={memos.length} />
+
+      <main className="flex-1 flex flex-col items-center px-4 pb-8">
+        {/* Recording Section */}
+        <div className="flex flex-col items-center justify-center py-12 md:py-16">
+          <RecordButton
+            isRecording={isRecording}
+            onStart={startRecording}
+            onStop={stopRecording}
+          />
+
+          {/* Recording Timer */}
+          <div
+            className={`mt-6 text-2xl font-mono tracking-wider transition-opacity duration-300 ${
+              isRecording ? 'opacity-100 text-accent-red' : 'opacity-40 text-text-secondary'
+            }`}
+            style={isRecording ? { animation: 'blink 1.5s ease-in-out infinite' } : {}}
+          >
+            {formatTime(recordingTime)}
+          </div>
+
+          {isRecording && (
+            <p className="mt-3 text-sm text-text-secondary animate-pulse">
+              録音中… タップして停止
+            </p>
+          )}
+
+          {!isRecording && memos.length === 0 && (
+            <p className="mt-6 text-sm text-text-muted text-center max-w-xs leading-relaxed">
+              ボタンを押して、ふと浮かんだフレーズを録音しよう
+            </p>
+          )}
+        </div>
+
+        {/* Memo List */}
+        {memos.length > 0 && (
+          <MemoList
+            memos={filteredMemos}
+            totalCount={memos.length}
+            playingId={playingId}
+            onTogglePlay={togglePlay}
+            onUpdateNote={updateNote}
+            onAddTag={addTag}
+            onRemoveTag={removeTag}
+            onDelete={deleteMemo}
+            allTags={allTags}
+            filterTags={filterTags}
+            onToggleFilterTag={toggleFilterTag}
+            onClearFilterTags={clearFilterTags}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+          />
+        )}
+      </main>
+    </div>
+  )
+}
