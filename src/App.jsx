@@ -3,9 +3,11 @@ import { get, set } from 'idb-keyval'
 import Header from './components/Header'
 import RecordButton from './components/RecordButton'
 import MemoList from './components/MemoList'
+import AudioVisualizer from './components/AudioVisualizer'
 
 export default function App() {
   const [isRecording, setIsRecording] = useState(false)
+  const [activeStream, setActiveStream] = useState(null)
   const [recordingTime, setRecordingTime] = useState(0)
   const [memos, setMemos] = useState([])
   const [playingId, setPlayingId] = useState(null)
@@ -106,6 +108,7 @@ export default function App() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const mediaRecorder = new MediaRecorder(stream)
       mediaRecorderRef.current = mediaRecorder
+      setActiveStream(stream)
       chunksRef.current = []
 
       mediaRecorder.ondataavailable = (e) => {
@@ -139,6 +142,7 @@ export default function App() {
 
         // Stop all tracks
         stream.getTracks().forEach((track) => track.stop())
+        setActiveStream(null)
       }
 
       mediaRecorder.start()
@@ -298,6 +302,8 @@ export default function App() {
             onStart={startRecording}
             onStop={stopRecording}
           />
+
+          <AudioVisualizer stream={activeStream} isRecording={isRecording} />
 
           {/* Recording Timer */}
           <div
