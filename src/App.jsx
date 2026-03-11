@@ -120,13 +120,22 @@ export default function App() {
         const url = URL.createObjectURL(blob)
         const title = generateTitle()
         const id = Date.now().toString()
-        const newMemo = { id, title, blob, url, note: '', tags: [], duration: recordingTime }
+        const durationSnapshot = recordingTime
 
-        setMemos((prev) => {
-          const newMemos = [newMemo, ...prev]
-          set('soundsketch-memos', newMemos).catch(console.error)
-          return newMemos
-        })
+        // iPhone (Safari) のIndexedDBはBlobの保存に失敗しやすいため、Base64文字列に変換してから保存する
+        const reader = new FileReader()
+        reader.readAsDataURL(blob)
+        reader.onloadend = () => {
+          const base64data = reader.result
+          const newMemo = { id, title, audioDataUrl: base64data, type: mimeType, url, note: '', tags: [], duration: durationSnapshot }
+
+          setMemos((prev) => {
+            const newMemos = [newMemo, ...prev]
+            // urlは都度生成されるので保存しない
+            set('soundsketch-memos', newMemos.map(m => ({ ...m, url: '' }))).catch(console.error)
+            return newMemos
+          })
+        }
 
         // Stop all tracks
         stream.getTracks().forEach((track) => track.stop())
@@ -191,7 +200,7 @@ export default function App() {
   const updateNote = useCallback((id, note) => {
     setMemos((prev) => {
       const newMemos = prev.map((m) => (m.id === id ? { ...m, note } : m))
-      set('soundsketch-memos', newMemos).catch(console.error)
+      set('soundsketch-memos', newMemos.map(m => ({ ...m, url: '' }))).catch(console.error)
       return newMemos
     })
   }, [])
@@ -205,7 +214,7 @@ export default function App() {
         const colorIndex = (m.tags.length) % 8
         return { ...m, tags: [...m.tags, { label: tag, colorIndex }] }
       })
-      set('soundsketch-memos', newMemos).catch(console.error)
+      set('soundsketch-memos', newMemos.map(m => ({ ...m, url: '' }))).catch(console.error)
       return newMemos
     })
   }, [])
@@ -218,7 +227,7 @@ export default function App() {
           ? { ...m, tags: m.tags.filter((t) => t.label !== tagLabel) }
           : m
       )
-      set('soundsketch-memos', newMemos).catch(console.error)
+      set('soundsketch-memos', newMemos.map(m => ({ ...m, url: '' }))).catch(console.error)
       return newMemos
     })
   }, [])
@@ -233,9 +242,11 @@ export default function App() {
       }
       setMemos((prev) => {
         const memo = prev.find((m) => m.id === id)
-        if (memo && memo.url) URL.revokeObjectURL(memo.url)
+        if (memo && memo.url && memo.url.startsWith('blob:')) {
+          URL.revokeObjectURL(memo.url)
+        }
         const newMemos = prev.filter((m) => m.id !== id)
-        set('soundsketch-memos', newMemos).catch(console.error)
+        set('soundsketch-memos', newMemos.map(m => ({ ...m, url: '' }))).catch(console.error)
         return newMemos
       })
     },
@@ -248,10 +259,18 @@ export default function App() {
       try {
         const storedMemos = await get('soundsketch-memos')
         if (storedMemos) {
-          setMemos(storedMemos.map(m => ({
-            ...m,
-            url: m.blob ? URL.createObjectURL(m.blob) : m.url
-          })))
+          setMemos(storedMemos.map(m => {
+            let loadedUrl = m.url
+            if (m.audioDataUrl) {
+              loadedUrl = m.audioDataUrl
+            } else if (m.blob) {
+              loadedUrl = URL.createObjectURL(m.blob)
+            }
+            return {
+              ...m,
+              url: loadedUrl
+            }
+          }))
         }
       } catch (e) {
         console.error('Failed to load memos:', e)
