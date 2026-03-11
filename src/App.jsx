@@ -4,6 +4,7 @@ import Header from './components/Header'
 import RecordButton from './components/RecordButton'
 import MemoList from './components/MemoList'
 import AudioVisualizer from './components/AudioVisualizer'
+import Metronome from './components/Metronome'
 
 export default function App() {
   const [isRecording, setIsRecording] = useState(false)
@@ -317,8 +318,14 @@ export default function App() {
 
           {isRecording && (
             <p className="mt-3 text-sm text-text-secondary animate-pulse">
-              録音中… タップして停止
+               録音中… タップして停止
             </p>
+          )}
+
+          {!isRecording && (
+            <div className="w-full flex-col items-center flex mt-2">
+              <Metronome />
+            </div>
           )}
 
           {!isRecording && memos.length === 0 && (
