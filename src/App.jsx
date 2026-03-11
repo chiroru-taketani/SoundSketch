@@ -331,11 +331,9 @@ export default function App() {
             </p>
           )}
 
-          {!isRecording && (
-            <div className="w-full flex-col items-center flex mt-2">
-              <Metronome />
-            </div>
-          )}
+          <div className="w-full flex-col items-center flex mt-2">
+            <Metronome />
+          </div>
 
           {!isRecording && memos.length === 0 && (
             <p className="mt-6 text-sm text-text-muted text-center max-w-xs leading-relaxed">
