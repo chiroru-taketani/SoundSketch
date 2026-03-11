@@ -308,12 +308,46 @@ export default function App() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-surface-50 text-text-primary font-sans flex flex-col">
+    <div className="min-h-screen bg-surface-50 text-text-primary font-sans flex flex-col pb-[300px]">
       <Header memoCount={memos.length} />
 
-      <main className="flex-1 flex flex-col items-center px-4 pb-8">
-        {/* Recording Section */}
-        <div className="flex flex-col items-center justify-center py-12 md:py-16">
+      <main className="flex-1 flex flex-col items-center px-4 w-full">
+        {!isRecording && memos.length === 0 && (
+          <div className="flex-1 flex items-center justify-center min-h-[40vh]">
+            <p className="text-sm text-text-muted text-center max-w-xs leading-relaxed mt-10">
+              下のボタンをタップして、ふと浮かんだフレーズを録音しよう
+            </p>
+          </div>
+        )}
+
+        {/* Memo List */}
+        {memos.length > 0 && (
+          <div className="w-full max-w-lg mt-6 mb-8">
+            <MemoList
+              memos={filteredMemos}
+              totalCount={memos.length}
+              playingId={playingId}
+              playingAudio={playingAudio}
+              onTogglePlay={togglePlay}
+              onUpdateNote={updateNote}
+              onUpdateTitle={updateTitle}
+              onAddTag={addTag}
+              onRemoveTag={removeTag}
+              onDelete={deleteMemo}
+              allTags={allTags}
+              filterTags={filterTags}
+              onToggleFilterTag={toggleFilterTag}
+              onClearFilterTags={clearFilterTags}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+            />
+          </div>
+        )}
+      </main>
+
+      {/* Fixed Recording Section */}
+      <div className="fixed bottom-0 left-0 right-0 bg-surface-50/90 backdrop-blur-xl border-t border-surface-200/60 z-50 pt-5 pb-8 md:pb-12 shadow-[0_-20px_40px_rgba(0,0,0,0.03)]">
+        <div className="flex flex-col items-center justify-center max-w-lg mx-auto px-4">
           <RecordButton
             isRecording={isRecording}
             onStart={startRecording}
@@ -324,7 +358,7 @@ export default function App() {
 
           {/* Recording Timer */}
           <div
-            className={`mt-6 text-2xl font-mono tracking-wider transition-opacity duration-300 ${
+            className={`mt-4 text-2xl font-mono tracking-wider transition-opacity duration-300 ${
               isRecording ? 'opacity-100 text-accent-red' : 'opacity-40 text-text-secondary'
             }`}
             style={isRecording ? { animation: 'blink 1.5s ease-in-out infinite' } : {}}
@@ -333,7 +367,7 @@ export default function App() {
           </div>
 
           {isRecording && (
-            <p className="mt-3 text-sm text-text-secondary animate-pulse">
+            <p className="mt-2 text-sm text-text-secondary animate-pulse">
                録音中… タップして停止
             </p>
           )}
@@ -341,36 +375,8 @@ export default function App() {
           <div className="w-full flex-col items-center flex mt-2">
             <Metronome />
           </div>
-
-          {!isRecording && memos.length === 0 && (
-            <p className="mt-6 text-sm text-text-muted text-center max-w-xs leading-relaxed">
-              ボタンを押して、ふと浮かんだフレーズを録音しよう
-            </p>
-          )}
         </div>
-
-        {/* Memo List */}
-        {memos.length > 0 && (
-          <MemoList
-            memos={filteredMemos}
-            totalCount={memos.length}
-            playingId={playingId}
-            playingAudio={playingAudio}
-            onTogglePlay={togglePlay}
-            onUpdateNote={updateNote}
-            onUpdateTitle={updateTitle}
-            onAddTag={addTag}
-            onRemoveTag={removeTag}
-            onDelete={deleteMemo}
-            allTags={allTags}
-            filterTags={filterTags}
-            onToggleFilterTag={toggleFilterTag}
-            onClearFilterTags={clearFilterTags}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-          />
-        )}
-      </main>
+      </div>
     </div>
   )
 }
