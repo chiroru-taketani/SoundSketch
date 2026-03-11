@@ -6,6 +6,7 @@ export default function MemoList({
   memos,
   totalCount,
   playingId,
+  playingAudio,
   onTogglePlay,
   onUpdateNote,
   onUpdateTitle,
@@ -78,6 +79,7 @@ export default function MemoList({
               key={memo.id}
               memo={memo}
               isPlaying={playingId === memo.id}
+              playingAudio={playingId === memo.id ? playingAudio : null}
               onTogglePlay={() => onTogglePlay(memo)}
               onUpdateNote={(note) => onUpdateNote(memo.id, note)}
               onUpdateTitle={(title) => onUpdateTitle(memo.id, title)}

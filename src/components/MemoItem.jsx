@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Play, Pause, Trash2, FileText, Tag, X, Plus, Download, Loader2 } from 'lucide-react'
 import { convertBlobToWav } from '../utils/audio'
+import PlaybackVisualizer from './PlaybackVisualizer'
 
 const TAG_COLORS = [
   { bg: 'rgba(168, 85, 247, 0.15)', text: '#c084fc', border: 'rgba(168, 85, 247, 0.3)' },   // purple
@@ -15,7 +16,7 @@ const TAG_COLORS = [
 
 const SUGGESTED_TAGS = ['メロディ', 'ビート', 'コード', 'ベース', 'ボーカル', 'アイデア', 'サンプル', 'リフ']
 
-export default function MemoItem({ memo, isPlaying, onTogglePlay, onUpdateNote, onUpdateTitle, onAddTag, onRemoveTag, onDelete, index }) {
+export default function MemoItem({ memo, isPlaying, playingAudio, onTogglePlay, onUpdateNote, onUpdateTitle, onAddTag, onRemoveTag, onDelete, index }) {
   const [showNote, setShowNote] = useState(false)
   const [showTagInput, setShowTagInput] = useState(false)
   const [tagInput, setTagInput] = useState('')
@@ -165,8 +166,11 @@ export default function MemoItem({ memo, isPlaying, onTogglePlay, onUpdateNote, 
           )}
         </div>
 
+        {/* Visualizer (Only visible when playing) */}
+        <PlaybackVisualizer audioElement={isPlaying ? playingAudio : null} />
+
         {/* Action buttons */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 ml-auto shrink-0">
           <button
             id={`tag-btn-${memo.id}`}
             onClick={() => setShowTagInput(!showTagInput)}

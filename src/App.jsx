@@ -12,6 +12,7 @@ export default function App() {
   const [recordingTime, setRecordingTime] = useState(0)
   const [memos, setMemos] = useState([])
   const [playingId, setPlayingId] = useState(null)
+  const [playingAudio, setPlayingAudio] = useState(null)
   const [filterTags, setFilterTags] = useState([])
   const [sortBy, setSortBy] = useState('newest')
 
@@ -179,6 +180,7 @@ export default function App() {
           audioRef.current = null
         }
         setPlayingId(null)
+        setPlayingAudio(null)
         return
       }
 
@@ -189,12 +191,16 @@ export default function App() {
       }
 
       const audio = new Audio(memo.url)
+      // 音声要素へのCORS制限対策
+      audio.crossOrigin = 'anonymous'
       audio.play()
       audioRef.current = audio
       setPlayingId(memo.id)
+      setPlayingAudio(audio)
 
       audio.onended = () => {
         setPlayingId(null)
+        setPlayingAudio(null)
         audioRef.current = null
       }
     },
@@ -253,6 +259,7 @@ export default function App() {
         audioRef.current.pause()
         audioRef.current = null
         setPlayingId(null)
+        setPlayingAudio(null)
       }
       setMemos((prev) => {
         const memo = prev.find((m) => m.id === id)
@@ -348,6 +355,7 @@ export default function App() {
             memos={filteredMemos}
             totalCount={memos.length}
             playingId={playingId}
+            playingAudio={playingAudio}
             onTogglePlay={togglePlay}
             onUpdateNote={updateNote}
             onUpdateTitle={updateTitle}
