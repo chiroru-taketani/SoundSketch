@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Play, Pause, Trash2, FileText, Tag, X, Plus, Share2, Loader2 } from 'lucide-react'
+import { Play, Pause, Trash2, FileText, Tag, X, Plus, Download, Loader2 } from 'lucide-react'
 import { convertBlobToWav } from '../utils/audio'
 
 const TAG_COLORS = [
@@ -71,23 +71,14 @@ export default function MemoItem({ memo, isPlaying, onTogglePlay, onUpdateNote, 
 
       const file = new File([exportBlob], filename, { type: exportType })
 
-      // Web Share API が対応している場合 (iOS Safari等)
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: memo.title,
-          text: 'SoundSketchで録音した音声を共有します',
-          files: [file]
-        })
-      } else {
-        // 非対応またはPCの場合はダウンロードさせる
-        const a = document.createElement('a')
-        a.href = URL.createObjectURL(exportBlob)
-        a.download = filename
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(a.href)
-      }
+      // ファイルを直接ダウンロードさせる（PC / スマホ共通）
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(exportBlob)
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(a.href)
     } catch (error) {
       if (error.name === 'AbortError' || error.message.includes('cancellation of share')) {
         // ユーザーがシェア画面を閉じただけなので何もしない
@@ -168,7 +159,7 @@ export default function MemoItem({ memo, isPlaying, onTogglePlay, onUpdateNote, 
             className="w-9 h-9 rounded-lg flex items-center justify-center text-text-muted hover:bg-surface-200 hover:text-text-secondary transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-wait"
             aria-label="WAVでエクスポート"
           >
-            {isExporting ? <Loader2 size={16} className="animate-spin text-accent-purple" /> : <Share2 size={16} />}
+            {isExporting ? <Loader2 size={16} className="animate-spin text-accent-purple" /> : <Download size={16} />}
           </button>
           <button
             id={`delete-btn-${memo.id}`}
