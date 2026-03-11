@@ -48,31 +48,60 @@ export default function AudioVisualizer({ stream, isRecording }) {
       analyser.getByteFrequencyData(dataArray)
       ctx.clearRect(0, 0, width, height)
 
-      // Use a subset of frequencies for a better look
-      const barCount = 40 // 増やす
-      const barWidth = width / (barCount * 2)
+      const barCount = 48
+      // 画面幅に対していい感じの幅を計算
+      const barWidth = Math.max(4, width / (barCount * 3))
+      const gap = barWidth * 0.8
       const centerX = width / 2
+      const centerY = height / 2
+
+      ctx.save()
+      // 全体的なグロー効果
+      ctx.shadowBlur = 24
+      ctx.shadowColor = 'rgba(255, 59, 92, 0.6)'
 
       for (let i = 0; i < barCount; i++) {
-        // Skip first few low freq noise and pick a value
-        const data = dataArray[i + 2] || 0
-        const percent = data / 255
-        // Minimum height of 4px for empty, scale max height smoothly
-        const barHeight = Math.max(4, height * percent * 0.6)
-
-        // 色はテーマに合わせて透明度を持たせる
-        ctx.fillStyle = 'rgba(255, 59, 92, 0.15)' // Tailwind accent-red (#ff3b5c) base
+        // 低周波成分にノイズが多い場合は少しインデックスをスキップ
+        const data = dataArray[i * 2 + 1] || 0
+        // 少しカーブをつけてダイナミックに反応させる
+        const percent = Math.pow(data / 255, 1.4) 
         
-        // Center aligned Y
-        const yPos = (height - barHeight) / 2
+        // 最大で画面の高さの70%くらいまで伸びる
+        const maxBarHeight = height * 0.7
+        const barHeight = Math.max(12, maxBarHeight * percent)
 
-        // Right side
-        ctx.fillRect(centerX + (i * barWidth), yPos, barWidth - 4, barHeight)
-        // Left side (mirror)
+        // バーごとにグラデーションを作成
+        const gradient = ctx.createLinearGradient(0, centerY - barHeight / 2, 0, centerY + barHeight / 2)
+        gradient.addColorStop(0, 'rgba(168, 85, 247, 0.2)')    // theme accent-purple
+        gradient.addColorStop(0.2, 'rgba(168, 85, 247, 0.6)')  
+        gradient.addColorStop(0.5, 'rgba(255, 59, 92, 0.95)')  // theme accent-red (core)
+        gradient.addColorStop(0.8, 'rgba(168, 85, 247, 0.6)')
+        gradient.addColorStop(1, 'rgba(168, 85, 247, 0.2)')
+        
+        ctx.fillStyle = gradient
+
+        const yPos = centerY - barHeight / 2
+        const xOffset = i * (barWidth + gap)
+        
+        // 角丸矩形の描画ヘルパー
+        const drawRoundedBar = (x, y, w, h) => {
+          ctx.beginPath()
+          if (ctx.roundRect) {
+            ctx.roundRect(x, y, w, h, w / 2)
+          } else {
+            ctx.rect(x, y, w, h)
+          }
+          ctx.fill()
+        }
+
+        // 中央から右側
+        drawRoundedBar(centerX + xOffset, yPos, barWidth, barHeight)
+        // 中央から左側（対称）
         if (i > 0) {
-          ctx.fillRect(centerX - (i * barWidth), yPos, barWidth - 4, barHeight)
+           drawRoundedBar(centerX - xOffset, yPos, barWidth, barHeight)
         }
       }
+      ctx.restore()
     }
 
     draw()
