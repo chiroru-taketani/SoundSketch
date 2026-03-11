@@ -89,7 +89,12 @@ export default function MemoItem({ memo, isPlaying, onTogglePlay, onUpdateNote, 
         URL.revokeObjectURL(a.href)
       }
     } catch (error) {
-      alert(`ファイルの書き出しに失敗しました。\n詳細: ${error.message || error}`)
+      if (error.name === 'AbortError' || error.message.includes('cancellation of share')) {
+        // ユーザーがシェア画面を閉じただけなので何もしない
+        console.log('シェアがキャンセルされました。')
+      } else {
+        alert(`ファイルの書き出しに失敗しました。\n詳細: ${error.message || error}`)
+      }
     } finally {
       setIsExporting(false)
     }
