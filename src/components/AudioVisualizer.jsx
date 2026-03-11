@@ -35,6 +35,12 @@ export default function AudioVisualizer({ stream, isRecording }) {
     const draw = () => {
       if (!isRecording) return
 
+      // Canvasの解像度を表示サイズに合わせる
+      if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+      }
+
       const width = canvas.width
       const height = canvas.height
       animationRef.current = requestAnimationFrame(draw)
@@ -43,7 +49,7 @@ export default function AudioVisualizer({ stream, isRecording }) {
       ctx.clearRect(0, 0, width, height)
 
       // Use a subset of frequencies for a better look
-      const barCount = 20
+      const barCount = 40 // 増やす
       const barWidth = width / (barCount * 2)
       const centerX = width / 2
 
@@ -52,19 +58,19 @@ export default function AudioVisualizer({ stream, isRecording }) {
         const data = dataArray[i + 2] || 0
         const percent = data / 255
         // Minimum height of 4px for empty, scale max height smoothly
-        const barHeight = Math.max(4, height * percent * 0.8)
+        const barHeight = Math.max(4, height * percent * 0.6)
 
-        ctx.fillStyle = '#ef4444' // Tailwind accent-red
+        // 色はテーマに合わせて透明度を持たせる
+        ctx.fillStyle = 'rgba(255, 59, 92, 0.15)' // Tailwind accent-red (#ff3b5c) base
         
-        // Ensure bars have rounded caps-like look by drawing a simple styled rect or just clean rects
         // Center aligned Y
         const yPos = (height - barHeight) / 2
 
         // Right side
-        ctx.fillRect(centerX + (i * barWidth), yPos, barWidth - 2, barHeight)
+        ctx.fillRect(centerX + (i * barWidth), yPos, barWidth - 4, barHeight)
         // Left side (mirror)
         if (i > 0) {
-          ctx.fillRect(centerX - (i * barWidth), yPos, barWidth - 2, barHeight)
+          ctx.fillRect(centerX - (i * barWidth), yPos, barWidth - 4, barHeight)
         }
       }
     }
@@ -81,10 +87,10 @@ export default function AudioVisualizer({ stream, isRecording }) {
   }, [isRecording, stream])
 
   return (
-    <div className={`w-full max-w-xs mt-6 transition-all duration-300 ease-in-out flex justify-center ${
-      isRecording ? 'opacity-100 h-16' : 'opacity-0 h-0 overflow-hidden'
+    <div className={`fixed inset-0 pointer-events-none transition-opacity duration-700 ease-in-out z-0 flex items-center justify-center ${
+      isRecording ? 'opacity-100' : 'opacity-0'
     }`}>
-      <canvas ref={canvasRef} width="320" height="64" className="w-full h-full" />
+      <canvas ref={canvasRef} className="w-full h-full" />
     </div>
   )
 }

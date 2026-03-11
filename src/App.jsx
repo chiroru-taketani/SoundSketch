@@ -308,10 +308,13 @@ export default function App() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-surface-50 text-text-primary font-sans flex flex-col pb-[300px]">
-      <Header memoCount={memos.length} />
+    <div className="min-h-screen bg-surface-50 text-text-primary font-sans flex flex-col pb-[300px] relative">
+      <AudioVisualizer stream={activeStream} isRecording={isRecording} />
+      
+      <div className="relative z-10 w-full flex-1 flex flex-col">
+        <Header memoCount={memos.length} />
 
-      <main className="flex-1 flex flex-col items-center px-4 w-full">
+        <main className="flex-1 flex flex-col items-center px-4 w-full">
         {!isRecording && memos.length === 0 && (
           <div className="flex-1 flex items-center justify-center min-h-[40vh]">
             <p className="text-sm text-text-muted text-center max-w-xs leading-relaxed mt-10">
@@ -343,7 +346,8 @@ export default function App() {
             />
           </div>
         )}
-      </main>
+        </main>
+      </div>
 
       {/* Fixed Recording Section */}
       <div className="fixed bottom-0 left-0 right-0 bg-surface-50/40 backdrop-blur-xl border-t border-surface-200/30 z-50 pt-5 pb-8 md:pb-12 shadow-[0_-20px_40px_rgba(0,0,0,0.03)]">
@@ -356,8 +360,6 @@ export default function App() {
             />
             <Metronome />
           </div>
-
-          <AudioVisualizer stream={activeStream} isRecording={isRecording} />
 
           {/* Recording Timer */}
           <div
