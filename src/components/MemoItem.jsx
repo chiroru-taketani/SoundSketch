@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Play, Pause, Trash2, FileText, Tag, X, Plus } from 'lucide-react'
+import { Play, Pause, Trash2, FileText, Tag, X, Plus, Share2 } from 'lucide-react'
 
 const TAG_COLORS = [
   { bg: 'rgba(168, 85, 247, 0.15)', text: '#c084fc', border: 'rgba(168, 85, 247, 0.3)' },   // purple
@@ -41,6 +41,46 @@ export default function MemoItem({ memo, isPlaying, onTogglePlay, onUpdateNote, 
   const availableSuggestions = SUGGESTED_TAGS.filter(
     (s) => !memo.tags.some((t) => t.label === s)
   )
+
+  const handleShare = async () => {
+    try {
+      // 拡張子の推測
+      const ext = memo.type?.includes('mp4') || memo.type?.includes('m4a') ? 'm4a' : 'webm'
+      const filename = `${memo.title || 'SoundSketch'}.${ext}`
+      
+      // Blobを取得
+      const response = await fetch(memo.url || memo.audioDataUrl)
+      const blob = await response.blob()
+      const file = new File([blob], filename, { type: memo.type || 'audio/webm' })
+
+      // Web Share API が対応している場合 (iOS Safari等)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: memo.title,
+          text: 'SoundSketchで録音した音声を共有します',
+          files: [file]
+        })
+      } else {
+        // 非対応またはPCの場合はダウンロードさせる
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(blob)
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(a.href)
+      }
+    } catch (error) {
+      console.error('シェア専用エラー:', error)
+      // エラー時のフォールバック(ダウンロード)
+      const a = document.createElement('a')
+      a.href = memo.url || memo.audioDataUrl
+      a.download = `${memo.title || 'SoundSketch'}.webm`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    }
+  }
 
   return (
     <div
@@ -102,6 +142,14 @@ export default function MemoItem({ memo, isPlaying, onTogglePlay, onUpdateNote, 
             aria-label="メモを編集"
           >
             <FileText size={16} />
+          </button>
+          <button
+            id={`share-btn-${memo.id}`}
+            onClick={handleShare}
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-text-muted hover:bg-surface-200 hover:text-text-secondary transition-all duration-200 cursor-pointer"
+            aria-label="共有・ダウンロード"
+          >
+            <Share2 size={16} />
           </button>
           <button
             id={`delete-btn-${memo.id}`}
