@@ -79,7 +79,7 @@ export default function Metronome() {
 
   // 値の増減を長押し対応にするのは複雑になるため、今回はシンプルなクリックだけ
   return (
-    <div className="flex items-center gap-3 bg-surface-100 border border-surface-200/60 rounded-full px-4 py-2.5 shadow-sm transition-colors hover:border-surface-300">
+    <div className="flex items-center gap-3 bg-surface-100/60 backdrop-blur-md border border-surface-200/40 rounded-full px-4 py-2.5 shadow-sm transition-colors hover:border-surface-300">
       <button
         onClick={() => setIsPlaying(!isPlaying)}
         className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200 ${

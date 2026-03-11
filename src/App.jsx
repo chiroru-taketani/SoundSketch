@@ -315,7 +315,7 @@ export default function App() {
         {!isRecording && memos.length === 0 && (
           <div className="flex-1 flex items-center justify-center min-h-[40vh]">
             <p className="text-sm text-text-muted text-center max-w-xs leading-relaxed mt-10">
-              下のボタンをタップして、ふと浮かんだフレーズを録音しよう
+              Don't stop the music!
             </p>
           </div>
         )}
@@ -346,7 +346,7 @@ export default function App() {
       </main>
 
       {/* Fixed Recording Section */}
-      <div className="fixed bottom-0 left-0 right-0 bg-surface-50/90 backdrop-blur-xl border-t border-surface-200/60 z-50 pt-5 pb-8 md:pb-12 shadow-[0_-20px_40px_rgba(0,0,0,0.03)]">
+      <div className="fixed bottom-0 left-0 right-0 bg-surface-50/40 backdrop-blur-xl border-t border-surface-200/30 z-50 pt-5 pb-8 md:pb-12 shadow-[0_-20px_40px_rgba(0,0,0,0.03)]">
         <div className="flex flex-col items-center justify-center max-w-lg mx-auto px-4">
           <div className="flex flex-row items-center justify-center gap-4 sm:gap-8 w-full">
             <RecordButton
