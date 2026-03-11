@@ -29,7 +29,7 @@ export default function RecordButton({ isRecording, onStart, onStop }) {
       {/* Main button */}
       <div
         className={`
-          relative w-28 h-28 md:w-32 md:h-32 rounded-full flex items-center justify-center
+          relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center
           transition-all duration-300 ease-out
           ${
             isRecording
@@ -48,13 +48,13 @@ export default function RecordButton({ isRecording, onStart, onStop }) {
 
         {isRecording ? (
           <Square
-            size={32}
+            size={24}
             className="text-white fill-white relative z-10"
             strokeWidth={0}
           />
         ) : (
           <Mic
-            size={36}
+            size={28}
             className="text-text-primary group-hover:text-accent-purple transition-colors duration-300 relative z-10"
           />
         )}
